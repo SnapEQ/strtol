@@ -4,6 +4,12 @@
 #include <errno.h>
 #include <ctype.h>
 
+enum DigitFlag {
+    NO_DIGIT_PARSED,
+    DIGIT_PARSED,
+    PARSING_OVERFLOW
+};
+
 
 const char *skip_whitespace(const char *s)
 {
@@ -84,7 +90,7 @@ void setup_limits(bool isNegative, int base,
 }
 
 const char *parse_digits(const char *s, int base, unsigned long cutoff,
-                                int cutlim, unsigned long *acc, int *any)
+                                int cutlim, unsigned long *acc, enum DigitFlag *any)
 {
     while (*s)
     {
@@ -92,7 +98,7 @@ const char *parse_digits(const char *s, int base, unsigned long cutoff,
         if (digit == -1)
             break;
 
-        if (*any < 0)
+        if (*any ==  PARSING_OVERFLOW)
         {
             s++;
             continue;
@@ -100,13 +106,13 @@ const char *parse_digits(const char *s, int base, unsigned long cutoff,
 
         if (*acc > cutoff || (*acc == cutoff && digit > cutlim))
         {
-            *any = -1;
+            *any = PARSING_OVERFLOW;
             *acc = cutoff;
             errno = ERANGE;
         }
         else
         {
-            *any = 1;
+            *any = DIGIT_PARSED;
             *acc = *acc * (unsigned long)base + (unsigned long)digit;
         }
         s++;
@@ -120,7 +126,7 @@ long int strtol(const char *nPtr, char **endPtr, int base)
     bool isNegative = false;
     unsigned long cutoff;
     int cutlim;
-    int any = 0;
+    enum DigitFlag any = NO_DIGIT_PARSED;
     unsigned long acc = 0;
 
     if (endPtr)
@@ -140,7 +146,7 @@ long int strtol(const char *nPtr, char **endPtr, int base)
     setup_limits(isNegative, base, &cutoff, &cutlim);
     s = parse_digits(s, base, cutoff, cutlim, &acc, &any);
 
-    if (any == 0)
+    if (any == NO_DIGIT_PARSED)
     {
         if (endPtr)
         {
@@ -154,7 +160,7 @@ long int strtol(const char *nPtr, char **endPtr, int base)
         *endPtr = (char *)s;
     }
 
-    if (any < 0)
+    if (any == PARSING_OVERFLOW)
     {
         return isNegative ? LONG_MIN : LONG_MAX;
     }
