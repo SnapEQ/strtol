@@ -1,4 +1,3 @@
-/* dummy implementation of strtol */
 #include <limits.h>
 #include <stdbool.h>
 #include <string.h>
