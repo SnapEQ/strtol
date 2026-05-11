@@ -145,28 +145,9 @@ long int strtol(const char *nPtr, char **endPtr, int base)
     s = determine_base(s, &base);
     setup_limits(isNegative, base, &cutoff, &cutlim);
     s = parse_digits(s, base, cutoff, cutlim, &acc, &any);
-
-    if (any == NO_DIGIT_PARSED)
-    {
-        if (endPtr)
-        {
-            *endPtr = (char *)nPtr;
-        }
-        return 0;
-    }
-
-    if (endPtr)
-    {
-        *endPtr = (char *)s;
-    }
-
-    if (any == PARSING_OVERFLOW)
-    {
-        return isNegative ? LONG_MIN : LONG_MAX;
-    }
-
-    if (isNegative)
-        return -(long)acc;
-
-    return (long)acc;
+    
+    if (endPtr) * endPtr = (char *)(any == NO_DIGIT_PARSED ? nPtr : s);
+    if (any == NO_DIGIT_PARSED) return 0;
+    if (any == PARSING_OVERFLOW) return isNegative ? LONG_LONG_MIN : LONG_MAX;
+    return isNegative ? -(long)acc : (long)acc;
 }
